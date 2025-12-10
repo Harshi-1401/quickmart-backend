@@ -1,27 +1,43 @@
-import express from "express";
-import bcrypt from "bcryptjs";
-import User from "../models/User.js";
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 
 const router = express.Router();
 
-router.get("/create-admin", async (req, res) => {
+// Create admin user
+router.get('/create-admin', async (req, res) => {
   try {
-    const hashedPassword = await bcrypt.hash("admin123", 10);
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ email: 'admin@quickmart.com' });
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'Admin user already exists' });
+    }
 
+    // Hash password
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+
+    // Create admin user
     const admin = new User({
-      name: "Admin User",
-      email: "admin@quickmart.com",
+      name: 'Admin User',
+      email: 'admin@quickmart.com',
       password: hashedPassword,
-      phone: "8122853115",
-      address: "HQ",
-      role: "admin"
+      phone: '8122853115',
+      address: 'HQ',
+      role: 'admin'
     });
 
     await admin.save();
-    res.send("Admin created successfully!");
+
+    res.status(201).json({
+      message: 'Admin created successfully',
+      admin: {
+        id: admin._id,
+        email: admin.email
+      }
+    });
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-export default router;
+module.exports = router;
