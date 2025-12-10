@@ -1,3 +1,4 @@
+import adminSetup from "./routes/adminSetup.js";
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -27,6 +28,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use("/api/setup", adminSetup);
 
 // Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI, {
