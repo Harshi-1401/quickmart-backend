@@ -96,7 +96,7 @@ const products = [
 async function seedProducts() {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to MongoDB');
+    console.log('✅ Connected to MongoDB Atlas');
 
     // Clear existing products
     await Product.deleteMany({});

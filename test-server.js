@@ -6,7 +6,8 @@ require('dotenv').config();
 async function testServer() {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
+    console.log('✅ Connected to MongoDB Atlas');
+    console.log('📍 Database:', mongoose.connection.name);
 
     // Test user creation
     const userCount = await User.countDocuments();

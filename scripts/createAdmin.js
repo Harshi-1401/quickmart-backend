@@ -5,7 +5,7 @@ require('dotenv').config();
 async function createAdmin() {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to MongoDB');
+    console.log('✅ Connected to MongoDB Atlas');
 
     // Check if admin already exists
     const existingAdmin = await User.findOne({ email: 'admin@quickmart.com' });
