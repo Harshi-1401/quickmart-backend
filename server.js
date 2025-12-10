@@ -1,4 +1,4 @@
-import adminSetup from "./routes/adminSetup.js";
+const adminSetup = require('./routes/adminSetup');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
