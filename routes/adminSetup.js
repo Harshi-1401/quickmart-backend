@@ -1,5 +1,4 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
 const router = express.Router();
@@ -13,14 +12,11 @@ router.get('/create-admin', async (req, res) => {
       return res.status(400).json({ message: 'Admin user already exists' });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-
-    // Create admin user
+    // Create admin user with plain password
     const admin = new User({
       name: 'Admin User',
       email: 'admin@quickmart.com',
-      password: hashedPassword,
+      password: 'admin123', // ✅ plain password
       phone: '8122853115',
       address: 'HQ',
       role: 'admin'
