@@ -1,4 +1,3 @@
-const adminSetup = require('./routes/adminSetup');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -28,7 +27,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use("/api/setup", adminSetup);
 
 // Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI, {
@@ -55,15 +53,10 @@ async function autoSeedDatabase() {
     
     // Check if products exist
     const productCount = await Product.countDocuments();
+    console.log(`📦 Found ${productCount} products in database`);
+    
     if (productCount === 0) {
-      console.log('📦 Database is empty, seeding products...');
-      
-      // Import and run seed data
-      const { initialProducts } = require('../src/data/products');
-      await Product.insertMany(initialProducts);
-      console.log(`✅ Seeded ${initialProducts.length} products`);
-    } else {
-      console.log(`📦 Found ${productCount} products in database`);
+      console.log('⚠️ No products found in database. Please run seeding manually if needed.');
     }
     
     // Check if admin user exists

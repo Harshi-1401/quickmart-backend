@@ -1,7 +1,6 @@
 const express = require('express');
 const Product = require('../models/Product');
 const User = require('../models/User');
-const { initialProducts } = require('../data/products');
 
 const router = express.Router();
 
@@ -17,11 +16,12 @@ router.post('/seed', async (req, res) => {
       console.log('🗑️ Cleared existing data');
     }
     
-    // Seed products
+    // Check products (seeding is handled by server.js auto-seed)
     const existingProducts = await Product.countDocuments();
     if (existingProducts === 0) {
-      await Product.insertMany(initialProducts);
-      console.log(`📦 Seeded ${initialProducts.length} products`);
+      console.log('⚠️ No products found. Auto-seeding should handle this on server startup.');
+    } else {
+      console.log(`📦 Found ${existingProducts} products in database`);
     }
     
     // Create admin user
