@@ -5,32 +5,28 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Validate email for registration
+// Validate email and phone for registration
 router.post('/validate-email', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, phone } = req.body;
 
-    // Basic email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: 'Please enter a valid email address' });
-    }
-
-    // Check if user already exists
+    // Check if email exists in the database
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' });
+    if (!existingUser) {
+      return res.status(400).json({ message: 'Email does not exist in our system' });
     }
 
-    // Simple email domain validation (you can customize this list)
-    const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
-    const emailDomain = email.split('@')[1].toLowerCase();
-    
-    if (!allowedDomains.includes(emailDomain)) {
-      return res.status(400).json({ message: 'Please use a valid email provider (Gmail, Yahoo, Outlook, Hotmail)' });
+    // Check if phone number matches the existing user
+    if (existingUser.phone !== phone.replace(/\D/g, '')) {
+      return res.status(400).json({ message: 'Email and phone number do not match' });
     }
 
-    res.json({ message: 'Email is valid and available for registration' });
+    // Check if user already has a password (already registered)
+    if (existingUser.password) {
+      return res.status(400).json({ message: 'User already registered. Please login instead.' });
+    }
+
+    res.json({ message: 'Email and phone verified successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -41,40 +37,32 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, phone, address } = req.body;
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: 'Please enter a valid email address' });
-    }
-
-    // Check if user exists
+    // Find existing user (should exist from validation)
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+    if (!existingUser) {
+      return res.status(400).json({ message: 'Email not found. Please validate your email first.' });
     }
 
-    // Email domain validation
-    const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
-    const emailDomain = email.split('@')[1].toLowerCase();
+    // Check if phone matches
+    if (existingUser.phone !== phone.replace(/\D/g, '')) {
+      return res.status(400).json({ message: 'Phone number does not match the registered email.' });
+    }
+
+    // Check if already has password (already registered)
+    if (existingUser.password) {
+      return res.status(400).json({ message: 'User already registered. Please login instead.' });
+    }
+
+    // Update existing user with password and address
+    existingUser.name = name;
+    existingUser.password = password; // Will be hashed by pre-save middleware
+    existingUser.address = address;
     
-    if (!allowedDomains.includes(emailDomain)) {
-      return res.status(400).json({ message: 'Please use a valid email provider (Gmail, Yahoo, Outlook, Hotmail)' });
-    }
-
-    // Create user
-    const user = new User({
-      name,
-      email,
-      password,
-      phone,
-      address
-    });
-
-    await user.save();
+    await existingUser.save();
 
     // Generate token
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: existingUser._id },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -82,12 +70,12 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       token,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        role: user.role
+        id: existingUser._id,
+        name: existingUser.name,
+        email: existingUser.email,
+        phone: existingUser.phone,
+        address: existingUser.address,
+        role: existingUser.role
       }
     });
   } catch (error) {

@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: false, // Allow pre-registered users without password
     minlength: 6
   },
   phone: {
@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
   },
   address: {
     type: String,
-    required: true,
+    required: false, // Allow pre-registered users without address
     trim: true
   },
   role: {
@@ -38,9 +38,9 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Hash password before saving
+// Hash password before saving (only if password exists)
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  if (!this.password || !this.isModified('password')) return next();
   
   try {
     const salt = await bcrypt.genSalt(10);
@@ -53,6 +53,7 @@ userSchema.pre('save', async function(next) {
 
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
+  if (!this.password) return false;
   return bcrypt.compare(candidatePassword, this.password);
 };
 
