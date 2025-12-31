@@ -103,7 +103,8 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     message: 'QuickMart API is running!',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.1' // Updated version to trigger redeploy
   });
 });
 
