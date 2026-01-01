@@ -4,10 +4,12 @@ const { auth, adminAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all products
+// Get all products (with admin flag for inactive products)
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find({ isActive: true }).sort({ name: 1 });
+    const isAdmin = req.query.admin === 'true';
+    const filter = isAdmin ? {} : { isActive: true };
+    const products = await Product.find(filter).sort({ name: 1 });
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

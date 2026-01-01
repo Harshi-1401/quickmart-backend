@@ -20,9 +20,14 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  emoji: {
+  imageUrl: {
     type: String,
-    required: true
+    required: true,
+    default: 'https://via.placeholder.com/200x200?text=Product'
+  },
+  description: {
+    type: String,
+    default: ''
   },
   stock: {
     type: Number,
