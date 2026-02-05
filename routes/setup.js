@@ -2,6 +2,7 @@ const express = require('express');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const { initialProducts } = require('../data/products');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -80,6 +81,50 @@ router.get('/status', async (req, res) => {
     res.status(500).json({
       error: error.message
     });
+  }
+});
+
+// Test email endpoint
+router.post('/test-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+
+    console.log(`🧪 Testing email sending to ${email}...`);
+    
+    // First test connection
+    const isConnected = await emailService.testConnection();
+    if (!isConnected) {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Email service connection failed. Check server logs for details.' 
+      });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const result = await emailService.sendOTP(email, otp, 'Test User');
+
+    if (result.success) {
+      res.json({ success: true, message: 'Test email sent successfully', messageId: result.messageId });
+    } else {
+      res.status(500).json({ success: false, error: result.error });
+    }
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/email-status', async (req, res) => {
+  try {
+    const configured = emailService.isConfigured();
+    const from = emailService.getFromAddress();
+    const connection = await emailService.testConnection();
+    res.json({ configured, from, connection });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -6,34 +6,108 @@ class EmailService {
     this.initializeTransporter();
   }
 
+<<<<<<< HEAD
   initializeTransporter() {
-    // Gmail configuration (you can change this to other providers)
-    this.transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS // Use App Password for Gmail
-      }
-    });
+    // Check if we have explicit SMTP configuration
+    if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+      console.log('📧 Using Custom SMTP Configuration:', process.env.SMTP_HOST);
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT || 587,
+        secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+        tls: {
+          rejectUnauthorized: false // Helps with some self-signed certs or strict firewall issues
+        }
+      });
+    } else {
+      // Default Gmail configuration
+      console.log('📧 Using Default Gmail Configuration');
+=======
+  isConfigured() {
+    const hasGmail = Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+    const hasSmtp = Boolean(
+      process.env.SMTP_HOST &&
+        process.env.SMTP_PORT &&
+        process.env.SMTP_USER &&
+        process.env.SMTP_PASS
+    );
+    return hasGmail || hasSmtp;
+  }
 
-    // Alternative configuration for other SMTP providers
-    // this.transporter = nodemailer.createTransport({
-    //   host: process.env.SMTP_HOST,
-    //   port: process.env.SMTP_PORT,
-    //   secure: process.env.SMTP_SECURE === 'true',
-    //   auth: {
-    //     user: process.env.SMTP_USER,
-    //     pass: process.env.SMTP_PASS
-    //   }
-    // });
+  getFromAddress() {
+    return process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER;
+  }
+
+  initializeTransporter() {
+    if (process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+      return;
+    }
+
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+>>>>>>> f29d4a9 (Fix production OTP email sending on Render; add diagnostics endpoints; use SMTP/Gmail config with clear errors)
+      this.transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        },
+        // Add timeout settings to prevent hanging
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000,   // 10 seconds
+        socketTimeout: 10000      // 10 seconds
+      });
+<<<<<<< HEAD
+    }
+=======
+      return;
+    }
+
+    this.transporter = null;
+>>>>>>> f29d4a9 (Fix production OTP email sending on Render; add diagnostics endpoints; use SMTP/Gmail config with clear errors)
+  }
+
+  isConfigured() {
+    const hasGmail = Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+    const hasSmtp = Boolean(
+      process.env.SMTP_HOST &&
+        process.env.SMTP_USER &&
+        process.env.SMTP_PASS
+    );
+    return hasGmail || hasSmtp;
+  }
+
+  getFromAddress() {
+    return process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER;
   }
 
   async sendOTP(email, otp, name = 'User') {
     try {
+      if (!this.transporter) {
+        return { success: false, error: 'Email service not configured' };
+      }
+
+      const fromAddress = this.getFromAddress();
+      if (!fromAddress) {
+        return { success: false, error: 'Email sender address not configured' };
+      }
+
       const mailOptions = {
         from: {
           name: 'QuickMart',
-          address: process.env.EMAIL_USER
+          address: fromAddress
         },
         to: email,
         subject: 'Your QuickMart Verification Code',
@@ -84,21 +158,32 @@ class EmailService {
       };
 
       const info = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Email sent successfully. MessageID:', info.messageId);
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('📧 Email sent successfully:', info.messageId);
         console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(info));
       }
       
       return { success: true, messageId: info.messageId };
     } catch (error) {
-      console.error('❌ Email sending failed:', error);
-      return { success: false, error: error.message };
+      console.error('❌ FULL EMAIL ERROR OBJECT:', JSON.stringify(error, null, 2));
+      
+      const details = {
+        message: error?.message,
+        code: error?.code,
+        response: error?.response,
+        responseCode: error?.responseCode,
+        command: error?.command,
+        stack: error?.stack
+      };
+      console.error('❌ Email sending failed details:', details);
+      return { success: false, error: error?.message || 'Email sending failed' };
     }
   }
 
   async testConnection() {
     try {
+      if (!this.transporter) return false;
       await this.transporter.verify();
       console.log('✅ Email service is ready');
       return true;

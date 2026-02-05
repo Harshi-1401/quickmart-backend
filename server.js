@@ -28,7 +28,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use("/api/setup", adminSetup);
 
 // Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI, {
@@ -104,7 +103,7 @@ app.get('/api/health', (req, res) => {
     message: 'QuickMart API is running!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    version: '1.0.1' // Updated version to trigger redeploy
+    version: '1.0.2' // Updated version to trigger redeploy
   });
 });
 

@@ -16,6 +16,7 @@ const generateOTP = () => {
 router.post('/send-otp', async (req, res) => {
   try {
     const { email, phone } = req.body;
+    const isProd = process.env.NODE_ENV === 'production';
 
     // Basic validation
     if (!email || !phone) {
@@ -61,7 +62,7 @@ router.post('/send-otp', async (req, res) => {
     await otpRecord.save();
 
     // Send OTP via email if credentials are configured, otherwise log to console
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    if (emailService.isConfigured()) {
       console.log(`📧 Sending OTP to ${email}...`);
       const emailResult = await emailService.sendOTP(email, otp);
       
@@ -78,6 +79,13 @@ router.post('/send-otp', async (req, res) => {
         success: true
       });
     } else {
+      if (isProd) {
+        return res.status(500).json({
+          message: 'Email service is not configured. Please try again later.',
+          success: false
+        });
+      }
+
       // Fallback to console logging when email is not configured
       console.log(`🔐 Development OTP for ${email}/${phone}: ${otp}`);
       console.log('⚠️  Email not configured. Add EMAIL_USER and EMAIL_PASS to .env to send actual emails.');
@@ -99,6 +107,7 @@ router.post('/send-otp', async (req, res) => {
 router.post('/resend-otp', async (req, res) => {
   try {
     const { email, phone } = req.body;
+    const isProd = process.env.NODE_ENV === 'production';
 
     // Basic validation
     if (!email || !phone) {
@@ -121,7 +130,7 @@ router.post('/resend-otp', async (req, res) => {
     await otpRecord.save();
 
     // Send OTP via email if credentials are configured, otherwise log to console
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    if (emailService.isConfigured()) {
       console.log(`📧 Resending OTP to ${email}...`);
       const emailResult = await emailService.sendOTP(email, otp);
       
@@ -138,6 +147,13 @@ router.post('/resend-otp', async (req, res) => {
         success: true
       });
     } else {
+      if (isProd) {
+        return res.status(500).json({
+          message: 'Email service is not configured. Please try again later.',
+          success: false
+        });
+      }
+
       // Fallback to console logging when email is not configured
       console.log(`🔐 Development OTP resent for ${email}/${phone}: ${otp}`);
       console.log('⚠️  Email not configured. Add EMAIL_USER and EMAIL_PASS to .env to send actual emails.');
