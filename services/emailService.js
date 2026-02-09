@@ -7,40 +7,58 @@ class EmailService {
   }
 
   initializeTransporter() {
-    // Check if we have explicit SMTP configuration
-    if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-      console.log('📧 Using Custom SMTP Configuration:', process.env.SMTP_HOST);
-      this.transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT || 587,
-        secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        },
-        tls: {
-          rejectUnauthorized: false // Helps with some self-signed certs or strict firewall issues
-        }
-      });
-    } else {
-      // Default Gmail configuration
-      console.log('📧 Using Default Gmail Configuration');
-      this.transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        }
-      });
+    try {
+      // Check if we have explicit SMTP configuration
+      if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+        console.log('📧 Using Custom SMTP Configuration:', process.env.SMTP_HOST);
+        this.transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST,
+          port: process.env.SMTP_PORT || 587,
+          secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+          },
+          tls: {
+            rejectUnauthorized: false // Helps with some self-signed certs or strict firewall issues
+          }
+        });
+      } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        // Default Gmail configuration
+        console.log('📧 Using Gmail Configuration');
+        this.transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+          }
+        });
+      } else {
+        console.log('⚠️  Email service not configured. OTP will be logged to console only.');
+        this.transporter = null;
+      }
+    } catch (error) {
+      console.error('❌ Failed to initialize email transporter:', error);
+      this.transporter = null;
     }
   }
 
   async sendOTP(email, otp, name = 'User') {
     try {
+      // If transporter is not configured, return error
+      if (!this.transporter) {
+        console.log(`🔐 Email not configured. OTP for ${email}: ${otp}`);
+        return { 
+          success: false, 
+          error: 'Email service not configured',
+          otp: otp // Return OTP for logging purposes
+        };
+      }
+
       const mailOptions = {
         from: {
           name: 'QuickMart',
-          address: process.env.EMAIL_USER
+          address: process.env.EMAIL_USER || process.env.SMTP_USER
         },
         to: email,
         subject: 'Your QuickMart Verification Code',
@@ -100,7 +118,8 @@ class EmailService {
       return { success: true, messageId: info.messageId };
     } catch (error) {
       console.error('❌ Email sending failed:', error);
-      return { success: false, error: error.message };
+      console.log(`🔐 Fallback OTP for ${email}: ${otp}`);
+      return { success: false, error: error.message, otp: otp };
     }
   }
 

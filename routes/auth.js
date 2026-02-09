@@ -67,8 +67,13 @@ router.post('/send-otp', async (req, res) => {
       
       if (!emailResult.success) {
         console.error('Failed to send OTP email:', emailResult.error);
-        return res.status(500).json({ 
-          message: 'Failed to send OTP. Please try again later.' 
+        // Don't block the process, still return success with OTP in logs
+        console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
+        return res.json({ 
+          message: 'OTP generated successfully. Check server logs or email.',
+          success: true,
+          // Include OTP when email fails
+          developmentOTP: process.env.NODE_ENV !== 'production' ? otp : undefined
         });
       }
       
@@ -83,9 +88,9 @@ router.post('/send-otp', async (req, res) => {
       console.log('⚠️  Email not configured. Add EMAIL_USER and EMAIL_PASS to .env to send actual emails.');
       
       res.json({ 
-        message: 'OTP sent successfully. Please check your email.',
+        message: 'OTP sent successfully. Check server logs.',
         success: true,
-        // Only include OTP in development mode when email is not configured
+        // Always include OTP when email is not configured
         developmentOTP: otp
       });
     }
@@ -127,8 +132,13 @@ router.post('/resend-otp', async (req, res) => {
       
       if (!emailResult.success) {
         console.error('Failed to resend OTP email:', emailResult.error);
-        return res.status(500).json({ 
-          message: 'Failed to resend OTP. Please try again later.' 
+        // Don't block the process, still return success with OTP in logs
+        console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
+        return res.json({ 
+          message: 'OTP generated successfully. Check server logs or email.',
+          success: true,
+          // Include OTP when email fails
+          developmentOTP: process.env.NODE_ENV !== 'production' ? otp : undefined
         });
       }
       
@@ -143,9 +153,9 @@ router.post('/resend-otp', async (req, res) => {
       console.log('⚠️  Email not configured. Add EMAIL_USER and EMAIL_PASS to .env to send actual emails.');
       
       res.json({ 
-        message: 'OTP resent successfully. Please check your email.',
+        message: 'OTP resent successfully. Check server logs.',
         success: true,
-        // Only include OTP in development mode when email is not configured
+        // Always include OTP when email is not configured
         developmentOTP: otp
       });
     }
