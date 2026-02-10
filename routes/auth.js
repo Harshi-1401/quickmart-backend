@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
-const emailService = require('../services/emailService');
+const resendEmailService = require('../services/resendEmailService');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -60,41 +60,25 @@ router.post('/send-otp', async (req, res) => {
     
     await otpRecord.save();
 
-    // Send OTP via email if credentials are configured, otherwise log to console
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      console.log(`📧 Sending OTP to ${email}...`);
-      const emailResult = await emailService.sendOTP(email, otp);
-      
-      if (!emailResult.success) {
-        console.error('Failed to send OTP email:', emailResult.error);
-        // Don't block the process, still return success with OTP in logs
-        console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
-        return res.json({ 
-          message: 'OTP generated successfully. Email delivery failed, but OTP is active.',
-          success: true,
-          // Include OTP when email fails (for testing/development)
-          otp: otp,
-          note: 'Email service unavailable. Use this OTP to continue.'
-        });
-      }
-      
-      console.log(`✅ OTP sent successfully to ${email}`);
-      res.json({ 
-        message: 'OTP sent successfully. Please check your email.',
+    // Send OTP via Resend email service
+    console.log(`📧 Sending OTP to ${email}...`);
+    const emailResult = await resendEmailService.sendOTP(email, otp);
+    
+    if (!emailResult.success) {
+      console.error('Failed to send OTP email:', emailResult.error);
+      // Still return success but log OTP for fallback
+      console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
+      return res.json({ 
+        message: 'OTP generated. Email delivery issue - check with support.',
         success: true
       });
-    } else {
-      // Fallback to console logging when email is not configured
-      console.log(`🔐 Development OTP for ${email}/${phone}: ${otp}`);
-      console.log('⚠️  Email not configured. Add EMAIL_USER and EMAIL_PASS to .env to send actual emails.');
-      
-      res.json({ 
-        message: 'OTP generated successfully.',
-        success: true,
-        // Always include OTP when email is not configured
-        otp: otp
-      });
     }
+    
+    console.log(`✅ OTP sent successfully to ${email}`);
+    res.json({ 
+      message: 'OTP sent successfully. Please check your email.',
+      success: true
+    });
   } catch (error) {
     console.error('Send OTP error:', error);
     res.status(500).json({ message: 'Server error. Please try again later.' });
@@ -126,41 +110,25 @@ router.post('/resend-otp', async (req, res) => {
     
     await otpRecord.save();
 
-    // Send OTP via email if credentials are configured, otherwise log to console
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      console.log(`📧 Resending OTP to ${email}...`);
-      const emailResult = await emailService.sendOTP(email, otp);
-      
-      if (!emailResult.success) {
-        console.error('Failed to resend OTP email:', emailResult.error);
-        // Don't block the process, still return success with OTP in logs
-        console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
-        return res.json({ 
-          message: 'OTP generated successfully. Email delivery failed, but OTP is active.',
-          success: true,
-          // Include OTP when email fails
-          otp: otp,
-          note: 'Email service unavailable. Use this OTP to continue.'
-        });
-      }
-      
-      console.log(`✅ OTP resent successfully to ${email}`);
-      res.json({ 
-        message: 'OTP resent successfully. Please check your email.',
+    // Send OTP via Resend email service
+    console.log(`📧 Resending OTP to ${email}...`);
+    const emailResult = await resendEmailService.sendOTP(email, otp);
+    
+    if (!emailResult.success) {
+      console.error('Failed to resend OTP email:', emailResult.error);
+      // Still return success but log OTP for fallback
+      console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
+      return res.json({ 
+        message: 'OTP generated. Email delivery issue - check with support.',
         success: true
       });
-    } else {
-      // Fallback to console logging when email is not configured
-      console.log(`🔐 Development OTP resent for ${email}/${phone}: ${otp}`);
-      console.log('⚠️  Email not configured. Add EMAIL_USER and EMAIL_PASS to .env to send actual emails.');
-      
-      res.json({ 
-        message: 'OTP generated successfully.',
-        success: true,
-        // Always include OTP when email is not configured
-        otp: otp
-      });
     }
+    
+    console.log(`✅ OTP resent successfully to ${email}`);
+    res.json({ 
+      message: 'OTP resent successfully. Please check your email.',
+      success: true
+    });
   } catch (error) {
     console.error('Resend OTP error:', error);
     res.status(500).json({ message: 'Server error. Please try again later.' });
