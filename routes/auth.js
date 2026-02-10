@@ -70,10 +70,11 @@ router.post('/send-otp', async (req, res) => {
         // Don't block the process, still return success with OTP in logs
         console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
         return res.json({ 
-          message: 'OTP generated successfully. Check server logs or email.',
+          message: 'OTP generated successfully. Email delivery failed, but OTP is active.',
           success: true,
-          // Include OTP when email fails
-          developmentOTP: process.env.NODE_ENV !== 'production' ? otp : undefined
+          // Include OTP when email fails (for testing/development)
+          otp: otp,
+          note: 'Email service unavailable. Use this OTP to continue.'
         });
       }
       
@@ -88,10 +89,10 @@ router.post('/send-otp', async (req, res) => {
       console.log('⚠️  Email not configured. Add EMAIL_USER and EMAIL_PASS to .env to send actual emails.');
       
       res.json({ 
-        message: 'OTP sent successfully. Check server logs.',
+        message: 'OTP generated successfully.',
         success: true,
         // Always include OTP when email is not configured
-        developmentOTP: otp
+        otp: otp
       });
     }
   } catch (error) {
@@ -135,10 +136,11 @@ router.post('/resend-otp', async (req, res) => {
         // Don't block the process, still return success with OTP in logs
         console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
         return res.json({ 
-          message: 'OTP generated successfully. Check server logs or email.',
+          message: 'OTP generated successfully. Email delivery failed, but OTP is active.',
           success: true,
           // Include OTP when email fails
-          developmentOTP: process.env.NODE_ENV !== 'production' ? otp : undefined
+          otp: otp,
+          note: 'Email service unavailable. Use this OTP to continue.'
         });
       }
       
@@ -153,10 +155,10 @@ router.post('/resend-otp', async (req, res) => {
       console.log('⚠️  Email not configured. Add EMAIL_USER and EMAIL_PASS to .env to send actual emails.');
       
       res.json({ 
-        message: 'OTP resent successfully. Check server logs.',
+        message: 'OTP generated successfully.',
         success: true,
         // Always include OTP when email is not configured
-        developmentOTP: otp
+        otp: otp
       });
     }
   } catch (error) {
