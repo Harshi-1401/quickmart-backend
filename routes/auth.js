@@ -60,17 +60,21 @@ router.post('/send-otp', async (req, res) => {
     
     await otpRecord.save();
 
-    // Send OTP via Resend email service
+    // Try to send OTP via Resend email service
     console.log(`📧 Sending OTP to ${email}...`);
     const emailResult = await resendEmailService.sendOTP(email, otp);
     
     if (!emailResult.success) {
       console.error('Failed to send OTP email:', emailResult.error);
-      // Still return success but log OTP for fallback
-      console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
+      console.log(`🔐 FALLBACK OTP for ${email}/${phone}: ${otp}`);
+      
+      // Return success anyway - OTP is saved in database
+      // In production, admin can check logs for OTP
       return res.json({ 
-        message: 'OTP generated. Email delivery issue - check with support.',
-        success: true
+        message: 'OTP generated successfully. Please contact support for OTP.',
+        success: true,
+        // Include OTP in development mode
+        ...(process.env.NODE_ENV === 'development' && { otp: otp })
       });
     }
     
@@ -110,17 +114,20 @@ router.post('/resend-otp', async (req, res) => {
     
     await otpRecord.save();
 
-    // Send OTP via Resend email service
+    // Try to send OTP via Resend email service
     console.log(`📧 Resending OTP to ${email}...`);
     const emailResult = await resendEmailService.sendOTP(email, otp);
     
     if (!emailResult.success) {
       console.error('Failed to resend OTP email:', emailResult.error);
-      // Still return success but log OTP for fallback
-      console.log(`🔐 OTP for ${email}/${phone}: ${otp}`);
+      console.log(`🔐 FALLBACK OTP for ${email}/${phone}: ${otp}`);
+      
+      // Return success anyway - OTP is saved in database
       return res.json({ 
-        message: 'OTP generated. Email delivery issue - check with support.',
-        success: true
+        message: 'OTP generated successfully. Please contact support for OTP.',
+        success: true,
+        // Include OTP in development mode
+        ...(process.env.NODE_ENV === 'development' && { otp: otp })
       });
     }
     
