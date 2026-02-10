@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
-const resendEmailService = require('../services/resendEmailService');
+const emailService = require('../services/emailService');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -60,18 +60,17 @@ router.post('/send-otp', async (req, res) => {
     
     await otpRecord.save();
 
-    // Try to send OTP via Resend email service
+    // Send OTP via Gmail email service
     console.log(`📧 Sending OTP to ${email}...`);
-    const emailResult = await resendEmailService.sendOTP(email, otp);
+    const emailResult = await emailService.sendOTP(email, otp);
     
     if (!emailResult.success) {
       console.error('Failed to send OTP email:', emailResult.error);
       console.log(`🔐 FALLBACK OTP for ${email}/${phone}: ${otp}`);
       
       // Return success anyway - OTP is saved in database
-      // In production, admin can check logs for OTP
       return res.json({ 
-        message: 'OTP generated successfully. Please contact support for OTP.',
+        message: 'OTP generated successfully. Please check server logs or contact support.',
         success: true,
         // Include OTP in development mode
         ...(process.env.NODE_ENV === 'development' && { otp: otp })
@@ -114,9 +113,9 @@ router.post('/resend-otp', async (req, res) => {
     
     await otpRecord.save();
 
-    // Try to send OTP via Resend email service
+    // Send OTP via Gmail email service
     console.log(`📧 Resending OTP to ${email}...`);
-    const emailResult = await resendEmailService.sendOTP(email, otp);
+    const emailResult = await emailService.sendOTP(email, otp);
     
     if (!emailResult.success) {
       console.error('Failed to resend OTP email:', emailResult.error);
@@ -124,7 +123,7 @@ router.post('/resend-otp', async (req, res) => {
       
       // Return success anyway - OTP is saved in database
       return res.json({ 
-        message: 'OTP generated successfully. Please contact support for OTP.',
+        message: 'OTP generated successfully. Please check server logs or contact support.',
         success: true,
         // Include OTP in development mode
         ...(process.env.NODE_ENV === 'development' && { otp: otp })

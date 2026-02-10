@@ -14,24 +14,33 @@ class EmailService {
         this.transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST,
           port: process.env.SMTP_PORT || 587,
-          secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+          secure: process.env.SMTP_SECURE === 'true',
           auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS
           },
           tls: {
-            rejectUnauthorized: false // Helps with some self-signed certs or strict firewall issues
-          }
+            rejectUnauthorized: false
+          },
+          connectionTimeout: 10000, // 10 seconds
+          greetingTimeout: 10000,
+          socketTimeout: 10000
         });
       } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        // Default Gmail configuration
+        // Gmail configuration with increased timeout
         console.log('📧 Using Gmail Configuration');
         this.transporter = nodemailer.createTransport({
           service: 'gmail',
           auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS
-          }
+          },
+          tls: {
+            rejectUnauthorized: false
+          },
+          connectionTimeout: 10000, // 10 seconds
+          greetingTimeout: 10000,
+          socketTimeout: 10000
         });
       } else {
         console.log('⚠️  Email service not configured. OTP will be logged to console only.');

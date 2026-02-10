@@ -3,24 +3,25 @@ node_modules/
 
 # Environment variables
 .env
+.env.local
+.env.production
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+logs/
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
 
 # Coverage directory used by tools like istanbul
 coverage/
-
-# Dependency directories
-node_modules/
-jspm_packages/
+*.lcov
 
 # Optional npm cache directory
 .npm
@@ -47,3 +48,30 @@ jspm_packages/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Build files
+dist/
+build/
+
+# Debug files
+debug.log
+error.log

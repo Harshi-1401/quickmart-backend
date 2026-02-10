@@ -15,11 +15,12 @@ const app = express();
 const corsOptions = {
   origin: [
     'http://localhost:3000', // Local development
-    'https://quickmart-c77puv6q2-harshinis-projects-99997810.vercel.app', // Original Vercel deployment
-    'https://quickmart-harshinis-projects-99997810.vercel.app', // Alternative Vercel URL
-    'https://quickmart-gamma.vercel.app', // New Vercel deployment URL
+    'https://quickmart-c77puv6q2-harshinis-projects-99997810.vercel.app',
+    'https://quickmart-harshinis-projects-99997810.vercel.app',
+    'https://quickmart-gamma.vercel.app',
     /^https:\/\/quickmart-.*\.vercel\.app$/, // Any Vercel deployment with quickmart prefix
-    'https://quickmart-backend-tvuf.onrender.com' // Render backend (for testing)
+    /^https:\/\/.*\.vercel\.app$/, // All Vercel deployments
+    'https://quickmart-backend-tvuf.onrender.com'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
