@@ -1,77 +1,36 @@
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 
-class EmailService {
+class SendGridEmailService {
   constructor() {
-    this.transporter = null;
-    this.initializeTransporter();
+    this.initialized = false;
+    this.fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@quickmart.com';
+    this.initialize();
   }
 
-  initializeTransporter() {
-    try {
-      // Check if we have explicit SMTP configuration
-      if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-        console.log('📧 Using Custom SMTP Configuration:', process.env.SMTP_HOST);
-        this.transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST,
-          port: process.env.SMTP_PORT || 587,
-          secure: process.env.SMTP_SECURE === 'true',
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-          },
-          tls: {
-            rejectUnauthorized: false
-          },
-          connectionTimeout: 10000, // 10 seconds
-          greetingTimeout: 10000,
-          socketTimeout: 10000
-        });
-      } else if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        // Gmail configuration with port 465 (SSL) - more reliable on cloud platforms
-        console.log('📧 Using Gmail Configuration (Port 465)');
-        this.transporter = nodemailer.createTransport({
-          host: 'smtp.gmail.com',
-          port: 465,
-          secure: true, // use SSL
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-          },
-          tls: {
-            rejectUnauthorized: false
-          },
-          connectionTimeout: 15000,
-          greetingTimeout: 15000,
-          socketTimeout: 15000
-        });
-      } else {
-        console.log('⚠️  Email service not configured. OTP will be logged to console only.');
-        this.transporter = null;
-      }
-    } catch (error) {
-      console.error('❌ Failed to initialize email transporter:', error);
-      this.transporter = null;
+  initialize() {
+    if (process.env.SENDGRID_API_KEY) {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      this.initialized = true;
+      console.log('✅ SendGrid email service initialized');
+    } else {
+      console.log('⚠️  SENDGRID_API_KEY not configured');
     }
   }
 
   async sendOTP(email, otp, name = 'User') {
     try {
-      // If transporter is not configured, return error
-      if (!this.transporter) {
-        console.log(`🔐 Email not configured. OTP for ${email}: ${otp}`);
+      if (!this.initialized) {
+        console.log(`🔐 SendGrid not configured. OTP for ${email}: ${otp}`);
         return { 
           success: false, 
           error: 'Email service not configured',
-          otp: otp // Return OTP for logging purposes
+          otp: otp 
         };
       }
 
-      const mailOptions = {
-        from: {
-          name: 'QuickMart',
-          address: process.env.EMAIL_USER || process.env.SMTP_USER
-        },
+      const msg = {
         to: email,
+        from: this.fromEmail,
         subject: 'Your QuickMart Verification Code',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -119,31 +78,25 @@ class EmailService {
         `
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
+      await sgMail.send(msg);
+      console.log(`✅ OTP email sent successfully to ${email}`);
+      return { success: true };
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📧 Email sent successfully:', info.messageId);
-        console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(info));
-      }
-      
-      return { success: true, messageId: info.messageId };
     } catch (error) {
-      console.error('❌ Email sending failed:', error);
+      console.error('❌ Failed to send OTP email:', error);
       console.log(`🔐 Fallback OTP for ${email}: ${otp}`);
       return { success: false, error: error.message, otp: otp };
     }
   }
 
   async testConnection() {
-    try {
-      await this.transporter.verify();
-      console.log('✅ Email service is ready');
-      return true;
-    } catch (error) {
-      console.error('❌ Email service connection failed:', error);
+    if (!this.initialized) {
+      console.log('❌ SendGrid not configured');
       return false;
     }
+    console.log('✅ SendGrid email service is ready');
+    return true;
   }
 }
 
-module.exports = new EmailService();
+module.exports = new SendGridEmailService();
